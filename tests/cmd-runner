@@ -71,6 +71,7 @@ Here's an example::
 """
 import botocore.session
 import sys
+import gc
 
 
 class CommandRunner(object):
@@ -115,6 +116,7 @@ class CommandRunner(object):
     def _do_free_clients(self, args):
         # Frees the memory associated with all clients.
         self._clients = []
+        # gc.collect()
 
     def _do_create_waiter(self, args):
         # Args:

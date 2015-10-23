@@ -145,7 +145,7 @@ class BaseClientDriverTest(unittest.TestCase):
         self.driver.send_cmd(*args)
 
     def record_memory(self):
-        self.driver.record_memory()
+        return self.driver.record_memory()
 
     @property
     def memory_samples(self):
@@ -183,6 +183,7 @@ class ClientDriver(object):
     def record_memory(self):
         mem = self._get_memory_with_ps(self._popen.pid)
         self.memory_samples.append(mem)
+        return mem
 
     def start(self):
         """Start up the command runner process."""

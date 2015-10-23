@@ -10,6 +10,9 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
+import logging
+import time
+
 from tests import BaseClientDriverTest
 
 
@@ -35,7 +38,7 @@ class TestDoesNotLeakMemory(BaseClientDriverTest):
         # 1. Caching.  Some of the botocore internals will cache data, so
         #    the first client created will consume more memory than subsequent
         #    clients.  We're interested in growing memory, not total
-        #    memory usage (for now), so we we care about the memory in the
+        #    memory usage (for now), so we care about the memory in the
         #    steady state case.
         # 2. Python memory allocation.  Due to how python allocates memory
         #    via it's small object allocator, arena's aren't freed until the
@@ -46,15 +49,27 @@ class TestDoesNotLeakMemory(BaseClientDriverTest):
         #    do is verify that memory that's released back to python's
         #    allocator (but not to the OS) is at least reused in subsequent
         #    requests to create botocore clients.
+        self.record_memory()
         self.cmd('create_multiple_clients', '200', 's3')
+        self.record_memory()
         self.cmd('free_clients')
+        start = self.record_memory()
+        # time.sleep(3)
         self.record_memory()
         # 500 clients in batches of 50.
         for _ in range(10):
+            self.record_memory()
             self.cmd('create_multiple_clients', '50', 's3')
+            self.record_memory()
             self.cmd('free_clients')
-        self.record_memory()
-        start, end = self.memory_samples
+            # time.sleep(1)
+            self.record_memory()
+        end = self.record_memory()
+        # start, end = self.memory_samples
+        logging.warn('memory consumption samples: %s, ... %s', self.memory_samples[:4], end)
+        for i in range(4, len(self.memory_samples), 3):
+            logging.warn('In loop: %s', self.memory_samples[i: i+3])
+        # open('/tmp/leak.txt', 'a').write('%s\n' % self.memory_samples)
         self.assertTrue((end - start) < self.MAX_GROWTH_BYTES, (end - start))
 
     def test_create_single_waiter_memory_constant(self):
