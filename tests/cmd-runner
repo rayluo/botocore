@@ -73,6 +73,8 @@ import botocore.session
 import sys
 import gc
 
+import objgraph  # A modified version which will dump STDOUT to /tmp/objgraph.txt
+
 
 class CommandRunner(object):
     DEFAULT_REGION = 'us-west-2'
@@ -108,10 +110,16 @@ class CommandRunner(object):
         # Args:
         # * num_clients - Number of clients to create in a loop
         # * client_args - Variable number of args to pass to create_client
+        objgraph.show_growth(limit=None)
+        open('/tmp/objgraph.txt', 'a').write('================\n\n')
+
         num_clients = args[0]
         client_args = args[1:]
         for _ in range(int(num_clients)):
             self._clients.append(self._session.create_client(*client_args))
+
+        objgraph.show_growth(limit=None)
+        open('/tmp/objgraph.txt', 'a').write('================\n\n')
 
     def _do_free_clients(self, args):
         # Frees the memory associated with all clients.
